@@ -8,20 +8,50 @@
 		
 	</PropertyGroup>
 	<ItemGroup>
+	  <AdditionalFiles Remove="Abilities\**" />
+	  <AdditionalFiles Remove="Buffs\**" />
+	  <AdditionalFiles Remove="Effects\**" />
+	  <AdditionalFiles Remove="Items\**" />
+	  <AdditionalFiles Remove="Projectiles\**" />
+	  <AdditionalFiles Remove="Sounds\**" />
+	  <AdditionalFiles Remove="Sprites\**" />
+	  <Compile Remove="Abilities\**" />
+	  <Compile Remove="Buffs\**" />
+	  <Compile Remove="Effects\**" />
+	  <Compile Remove="Items\**" />
+	  <Compile Remove="Projectiles\**" />
+	  <Compile Remove="Sounds\**" />
+	  <Compile Remove="Sprites\**" />
+	  <EmbeddedResource Remove="Abilities\**" />
+	  <EmbeddedResource Remove="Buffs\**" />
+	  <EmbeddedResource Remove="Effects\**" />
+	  <EmbeddedResource Remove="Items\**" />
+	  <EmbeddedResource Remove="Projectiles\**" />
+	  <EmbeddedResource Remove="Sounds\**" />
+	  <EmbeddedResource Remove="Sprites\**" />
+	  <None Remove="Abilities\**" />
+	  <None Remove="Buffs\**" />
+	  <None Remove="Effects\**" />
+	  <None Remove="Items\**" />
+	  <None Remove="Projectiles\**" />
+	  <None Remove="Sounds\**" />
+	  <None Remove="Sprites\**" />
+	</ItemGroup>
+	<ItemGroup>
 	  <AdditionalFiles Remove="icon.png" />
 	</ItemGroup>
 
 	<!-- References -->
 	<ItemGroup>
-	  <Folder Include="Items\" />
-	  <Folder Include="Abilities\" />
-	  <Folder Include="Buffs\" />
-	  <Folder Include="Effects\" />
+	  <Folder Include="General\Buffs\" />
+	  <Folder Include="General\Sounds\" />
+	  <Folder Include="General\Sprites\" />
+	  <Folder Include="General\Projectiles\" />
+	  <Folder Include="SatoruGojo\Buffs\" />
+	  <Folder Include="SatoruGojo\Sounds\" />
+	  <Folder Include="SatoruGojo\Sprites\" />
 	  <Folder Include="UI\" />
-	  <Folder Include="Sprites\" />
-	  <Folder Include="Sounds\" />
 	  <Folder Include="NPCs\" />
-	  <Folder Include="Projectiles\" />
 	</ItemGroup>
 
 </Project>
