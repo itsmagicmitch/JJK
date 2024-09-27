@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Import tModLoader mod properties -->
+	<Import Project="..\tModLoader.targets" />
+
+	<!-- General -->
+	<PropertyGroup>
+		
+	</PropertyGroup>
+
+	<!-- References -->
+	<ItemGroup>
+	  <Folder Include="Items\" />
+	  <Folder Include="Abilities\" />
+	  <Folder Include="Buffs\" />
+	  <Folder Include="Effects\" />
+	  <Folder Include="UI\" />
+	  <Folder Include="Sprites\" />
+	  <Folder Include="Sounds\" />
+	  <Folder Include="NPCs\" />
+	  <Folder Include="Projectiles\" />
+	</ItemGroup>
+
+</Project>

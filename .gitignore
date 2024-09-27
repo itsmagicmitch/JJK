@@ -1,0 +1,51 @@
+# Compiled files and cache
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.mdb
+
+# Build artifacts
+*.tmod
+*.tmc
+*.tml
+
+# tModLoader specific
+*.csproj.user
+.tModLoader/
+ModSources/.vs/
+*.user
+*.suo
+
+# Visual Studio
+.vscode/
+.vs/
+*.sln
+
+# Temporary files and logs
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# OS-specific files
+*.DS_Store
+*.Spotlight-V100
+*.Trashes
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Node.js dependencies (if any front-end work is done)
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
