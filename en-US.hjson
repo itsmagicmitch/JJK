@@ -1,0 +1,12 @@
+Mods: {
+	NahIdWin: {
+		Items: {
+			Blue: {
+				DisplayName: Blue
+				Tooltip: ""
+			}
+		}
+
+		Projectiles.BlueProjectile.DisplayName: Blue Projectile
+	}
+}

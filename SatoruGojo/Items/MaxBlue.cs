@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NahIdWin.SatoruGojo.Items
 {
-    internal class MaxBlue
+    public class MaxBlue
     {
     }
 }

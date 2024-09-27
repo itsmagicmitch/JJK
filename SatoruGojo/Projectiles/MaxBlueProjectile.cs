@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NahIdWin.SatoruGojo.Projectiles
 {
-    internal class MaxBlueProjectile
+    public class MaxBlueProjectile
     {
     }
 }
