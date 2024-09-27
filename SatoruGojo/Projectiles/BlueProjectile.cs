@@ -36,80 +36,110 @@ namespace NahIdWin.SatoruGojo.Projectiles
         {
             Player player = Main.player[Projectile.owner];
 
-
-
-            // If charging, keep the projectile near the player's hand
+            // Visual effects
             if (_isCharging)
             {
-                // Add a charging visual effect while projectile is charging
                 int dust = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.BlueCrystalShard);
-                Main.dust[dust].velocity *= 0.3f; // Adjust speed of the dust
-                Main.dust[dust].scale = 1.5f; // Make dust particles larger
-                Main.dust[dust].noGravity = true; // Make dust float
+                Main.dust[dust].velocity *= 0.3f;
+                Main.dust[dust].scale = 1.5f;
+                Main.dust[dust].noGravity = true;
+            }
 
-                // Position projectile near player's hand
-                Projectile.Center = player.Center + new Vector2(20 * player.direction, -10); // Adjust as necessary
+            // Charging logic
+            if (_isCharging)
+            {
+                Projectile.Center = player.Center + new Vector2(20 * player.direction, -10);
                 Projectile.velocity = Vector2.Zero;
-
-                // Reduce charge time
                 _chargeTime--;
 
-                // Start following cursor if player is holding the attack button (channeling)
                 if (player.channel)
                 {
                     _followingCursor = true;
                 }
 
-                // When charging is complete
                 if (_chargeTime <= 0)
                 {
                     _isCharging = false;
-                    // Set the initial direction based on cursor
-                    _initialDirection = (Main.MouseWorld - Projectile.Center).SafeNormalize(Vector2.UnitX) * 10f; // Adjust speed as needed
+                    _initialDirection = (Main.MouseWorld - Projectile.Center).SafeNormalize(Vector2.UnitX) * 10f;
                     Projectile.velocity = _initialDirection;
 
-                    // If channeling, continue to follow cursor
                     if (_followingCursor)
                     {
-                        Projectile.tileCollide = false; // Ignore tiles while following cursor
+                        Projectile.tileCollide = false;
                     }
                 }
             }
             else
             {
-                // Projectile is either launched or following cursor
+                // Following cursor logic
                 if (_followingCursor && player.channel)
                 {
-                    // Continue to follow cursor
                     Vector2 cursorPosition = Main.MouseWorld;
                     Vector2 direction = (cursorPosition - Projectile.Center).SafeNormalize(Vector2.UnitX);
-                    Projectile.velocity = direction * 10f; // Adjust speed as necessary
+                    Projectile.velocity = direction * 10f;
 
                     // Consume mana over time
                     if (player.statMana > _manaCostPerSecond / 60f)
                     {
-                        if (Main.GameUpdateCount % 60 == 0) // Every second
+                        if (Main.GameUpdateCount % 60 == 0)
                         {
                             player.statMana -= _manaCostPerSecond;
                         }
                     }
                     else
                     {
-                        // Stop following if not enough mana
                         _followingCursor = false;
                     }
                 }
                 else
                 {
-                    // Launch in the current direction if the player releases the button or runs out of mana
                     _followingCursor = false;
-                    Projectile.tileCollide = true; // Re-enable tile collision
+                    Projectile.tileCollide = true;
+
+                    // Increase speed after being released
+                    Projectile.velocity *= 1.03f; // Speed up over time after release
                 }
 
-                // Visuals for when Blue is actively following cursor
+                // Pull enemies towards the projectile
+                foreach (NPC npc in Main.npc)
+                {
+                    if (npc.active && !npc.friendly && !npc.dontTakeDamage)
+                    {
+                        float distance = Vector2.Distance(Projectile.Center, npc.Center);
+
+                        // Only pull enemies within a certain range
+                        if (distance < 300f)
+                        {
+                            Vector2 pullDirection = (Projectile.Center - npc.Center).SafeNormalize(Vector2.Zero);
+                            float pullStrength = (300f - distance) / 300f; // Strengthen as the distance decreases
+                            npc.velocity += pullDirection * pullStrength * 2f; // Adjust force as needed
+                        }
+                    }
+                }
+
+                // Destroy small tiles in the area of effect
+                int radius = 2; // Adjust the AOE radius as necessary
+                int projTileX = (int)(Projectile.position.X / 16f);
+                int projTileY = (int)(Projectile.position.Y / 16f);
+
+                for (int x = projTileX - radius; x <= projTileX + radius; x++)
+                {
+                    for (int y = projTileY - radius; y <= projTileY + radius; y++)
+                    {
+                        Tile tile = Framing.GetTileSafely(x, y);
+
+                        // Destroy certain tiles like grass, vines, and cobwebs
+                        if (tile.TileType == TileID.Plants || tile.TileType == TileID.Cobweb)
+                        {
+                            WorldGen.KillTile(x, y);
+                        }
+                    }
+                }
+
+                // Visual trail while traveling
                 int trailDust = Dust.NewDust(Projectile.position, Projectile.width, Projectile.height, DustID.BlueTorch);
-                Main.dust[trailDust].velocity *= 0.5f; // Slower dust trail
-                Main.dust[trailDust].scale = 1.8f; // Larger dust particles
+                Main.dust[trailDust].velocity *= 0.5f;
+                Main.dust[trailDust].scale = 1.8f;
                 Main.dust[trailDust].noGravity = true;
             }
         }
