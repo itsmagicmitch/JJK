@@ -3,22 +3,33 @@ using Terraria.ID;
 using Terraria.ModLoader;
 using Microsoft.Xna.Framework;
 using System;
+using Terraria.UI;
 
 namespace NahIdWin.SatoruGojo.Projectiles
 {
     public class BlueProjectile : ModProjectile
     {
+        #region Member Variables
+
         private bool _isCharging = true;
         private float _chargeTime = 60f;
         private int _manaCostPerSecond = 5;
         private Vector2 _initialDirection;
         private bool _followingCursor = false;
 
-        private float _maxSpeed = 20f; // Set a cap for the speed
-        private float _baseAcceleration = 0.1f; // Base acceleration rate
-        private float _timeTraveling = 0f; // Track the time the projectile has been traveling
+        private float _maxSpeed = 24f; // Set a cap for the speed
+        private float _accelerationRate = 1.02f; // Rate at which the projectile accelerates
+        private float _turnRate = 0.1f; // How quickly the projectile turns towards its target
+
+        #endregion
+
+        #region Overridden Properties
 
         public override string Texture => "Terraria/Images/Projectile_" + ProjectileID.MagicMissile; // Use Magic Missile texture as placeholder
+
+        #endregion
+
+        #region Overridden Methods
 
         public override void SetDefaults()
         {
@@ -75,8 +86,32 @@ namespace NahIdWin.SatoruGojo.Projectiles
                 if (_followingCursor && player.channel)
                 {
                     Vector2 cursorPosition = Main.MouseWorld;
-                    Vector2 direction = (cursorPosition - Projectile.Center).SafeNormalize(Vector2.UnitX);
-                    Projectile.velocity = direction * 10f;
+                    Vector2 targetDirection = (cursorPosition - Projectile.Center).SafeNormalize(Vector2.Zero);
+
+                    // Calculate intended velocity
+                    Vector2 intendedVelocity = targetDirection * _maxSpeed;
+
+                    // Check if the intended position collides with a tile
+                    Vector2 nextPosition = Projectile.position + intendedVelocity;
+                    if (Collision.SolidCollision(nextPosition, Projectile.width, Projectile.height))
+                    {
+                        // Adjust intendedVelocity to slide along the collision
+                        intendedVelocity = AdjustVelocityForTileCollision(intendedVelocity);
+                    }
+
+                    // Gradually adjust velocity towards target direction
+                    Projectile.velocity = Vector2.Lerp(Projectile.velocity, targetDirection * _maxSpeed, _turnRate);
+
+                    // Apply acceleration
+                    if (Projectile.velocity.Length() < _maxSpeed)
+                    {
+                        Projectile.velocity *= _accelerationRate;
+                    }
+                    else
+                    {
+                        // Cap the speed to maxSpeed
+                        Projectile.velocity = Vector2.Normalize(Projectile.velocity) * _maxSpeed;
+                    }
 
                     // Consume mana over time for following
                     if (player.statMana > _manaCostPerSecond / 60f)
@@ -96,14 +131,10 @@ namespace NahIdWin.SatoruGojo.Projectiles
                     _followingCursor = false;
                     Projectile.tileCollide = true;
 
-                    _timeTraveling += 1f; // Increment travel time each tick
-
-                    // Calculate exponential acceleration
-                    float exponentialFactor = (float)Math.Pow(1f + _baseAcceleration, _timeTraveling);
-
+                    // Apply acceleration for released projectile
                     if (Projectile.velocity.Length() < _maxSpeed)
                     {
-                        Projectile.velocity = Vector2.Normalize(Projectile.velocity) * exponentialFactor;
+                        Projectile.velocity *= _accelerationRate;
                     }
                     else
                     {
@@ -181,8 +212,43 @@ namespace NahIdWin.SatoruGojo.Projectiles
 
         public override bool OnTileCollide(Vector2 oldVelocity)
         {
-            Projectile.Kill();
-            return false;
+            // If the projectile is following the cursor, prevent it from disappearing
+            if (_followingCursor)
+            {
+                // Stop movement but do not destroy
+                Projectile.velocity = Vector2.Zero;
+                return false; // Returning false prevents projectile from being killed
+            }
+
+            // If not following, allow normal collision behavior
+            return true;
         }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        private Vector2 AdjustVelocityForTileCollision(Vector2 velocity)
+        {
+            // Check horizontal and vertical collisions separately to determine sliding behavior
+            Vector2 horizontalVelocity = new Vector2(velocity.X, 0);
+            Vector2 verticalVelocity = new Vector2(0, velocity.Y);
+
+            // If horizontal movement would collide, zero out X velocity
+            if (Collision.SolidCollision(Projectile.position + horizontalVelocity, Projectile.width, Projectile.height))
+            {
+                velocity.X = 0;
+            }
+
+            // If vertical movement would collide, zero out Y velocity
+            if (Collision.SolidCollision(Projectile.position + verticalVelocity, Projectile.width, Projectile.height))
+            {
+                velocity.Y = 0;
+            }
+
+            return velocity;
+        }
+
+        #endregion
     }
 }
