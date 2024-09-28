@@ -1,3 +1,3 @@
 displayName = Nah, I'd Win.
 author = itsmagicmitch
-version = 0.4
+version = 0.7
