@@ -4,6 +4,7 @@ using Terraria.ModLoader;
 using Microsoft.Xna.Framework;
 using System;
 using Terraria.UI;
+using System.Collections.Generic;
 
 namespace NahIdWin.SatoruGojo.Projectiles
 {
@@ -19,13 +20,26 @@ namespace NahIdWin.SatoruGojo.Projectiles
 
         private float _maxSpeed = 24f; // Set a cap for the speed
         private float _accelerationRate = 1.02f; // Rate at which the projectile accelerates
-        private float _turnRate = 0.1f; // How quickly the projectile turns towards its target
+        private float _turnRate = 0.05f; // How quickly the projectile turns towards its target
+
+        // Define breakable tile types once
+        private static readonly HashSet<int> _breakableTileIDs = new HashSet<int>
+        {
+            TileID.Plants, TileID.Cobweb, TileID.Plants2, TileID.Vines, TileID.LilyPad, TileID.Pots,
+            TileID.BloomingHerbs, TileID.ImmatureHerbs, TileID.MatureHerbs, TileID.MushroomPlants,
+            TileID.MushroomVines, TileID.JunglePlants, TileID.JunglePlants2, TileID.GlowTulip,
+            TileID.CorruptPlants, TileID.CorruptVines, TileID.JungleVines, TileID.JungleThorns,
+            TileID.CorruptThorns, TileID.CrimsonPlants, TileID.Coral, TileID.DyePlants,
+            TileID.CrimsonThorns, TileID.CrimsonVines, TileID.JungleVines, TileID.JungleThorns,
+            TileID.HallowedPlants, TileID.HallowedPlants2, TileID.HallowedVines,
+            TileID.AshPlants, TileID.AshVines
+        };
 
         #endregion
 
         #region Overridden Properties
 
-        public override string Texture => "Terraria/Images/Projectile_" + ProjectileID.MagicMissile; // Use Magic Missile texture as placeholder
+        public override string Texture => _isCharging ? "NahIdWin/SatoruGojo/Textures/BlueChargingTexture" : "Terraria/Images/Projectile_" + ProjectileID.MagicMissile;
 
         #endregion
 
@@ -37,10 +51,11 @@ namespace NahIdWin.SatoruGojo.Projectiles
             Projectile.height = 24;
             Projectile.friendly = true;
             Projectile.DamageType = DamageClass.Magic;
-            Projectile.tileCollide = true;
+            Projectile.tileCollide = false;
             Projectile.penetrate = -1;
             Projectile.timeLeft = 3600;
             Projectile.light = 0.5f;
+            Main.projFrames[Projectile.type] = 12; // Set to the number of frames in the charging texture
         }
 
         public override void AI()
@@ -59,6 +74,18 @@ namespace NahIdWin.SatoruGojo.Projectiles
             // Charging logic
             if (_isCharging)
             {
+                int frameDuration = 5; // Change this value to control the speed of the animation
+                Projectile.frameCounter++;
+                if (Projectile.frameCounter >= frameDuration)
+                {
+                    Projectile.frameCounter = 0;
+                    Projectile.frame++;
+                    if (Projectile.frame >= 12) // Total number of frames
+                    {
+                        Projectile.frame = 11; // Stay on the last frame of the charging animation
+                    }
+                }
+
                 Projectile.Center = player.Center + new Vector2(20 * player.direction, -10);
                 Projectile.velocity = Vector2.Zero;
                 _chargeTime--;
@@ -87,17 +114,6 @@ namespace NahIdWin.SatoruGojo.Projectiles
                 {
                     Vector2 cursorPosition = Main.MouseWorld;
                     Vector2 targetDirection = (cursorPosition - Projectile.Center).SafeNormalize(Vector2.Zero);
-
-                    // Calculate intended velocity
-                    Vector2 intendedVelocity = targetDirection * _maxSpeed;
-
-                    // Check if the intended position collides with a tile
-                    Vector2 nextPosition = Projectile.position + intendedVelocity;
-                    if (Collision.SolidCollision(nextPosition, Projectile.width, Projectile.height))
-                    {
-                        // Adjust intendedVelocity to slide along the collision
-                        intendedVelocity = AdjustVelocityForTileCollision(intendedVelocity);
-                    }
 
                     // Gradually adjust velocity towards target direction
                     Projectile.velocity = Vector2.Lerp(Projectile.velocity, targetDirection * _maxSpeed, _turnRate);
@@ -129,7 +145,6 @@ namespace NahIdWin.SatoruGojo.Projectiles
                 else
                 {
                     _followingCursor = false;
-                    Projectile.tileCollide = true;
 
                     // Apply acceleration for released projectile
                     if (Projectile.velocity.Length() < _maxSpeed)
@@ -173,7 +188,7 @@ namespace NahIdWin.SatoruGojo.Projectiles
                         float distance = Vector2.Distance(new Vector2(x * 16, y * 16), Projectile.Center);
 
                         // Destroy certain tiles like grass, vines, and cobwebs if within suction range
-                        if (distance < 300f && (tile.TileType == TileID.Plants || tile.TileType == TileID.Cobweb))
+                        if (distance < 300f && _breakableTileIDs.Contains(tile.TileType))
                         {
                             WorldGen.KillTile(x, y);
                         }
@@ -190,7 +205,7 @@ namespace NahIdWin.SatoruGojo.Projectiles
                         float distance = Vector2.Distance(new Vector2(x * 16, y * 16), Projectile.Center);
 
                         // If tile is within wind range and is a destructible type
-                        if (distance < 480f && (tile.TileType == TileID.Plants || tile.TileType == TileID.Cobweb))
+                        if (distance < 480f && _breakableTileIDs.Contains(tile.TileType))
                         {
                             // Create a dust effect to represent wind or suction
                             Vector2 tilePosition = new Vector2(x * 16, y * 16);
@@ -208,45 +223,6 @@ namespace NahIdWin.SatoruGojo.Projectiles
                 Main.dust[trailDust].scale = 1.8f;
                 Main.dust[trailDust].noGravity = true;
             }
-        }
-
-        public override bool OnTileCollide(Vector2 oldVelocity)
-        {
-            // If the projectile is following the cursor, prevent it from disappearing
-            if (_followingCursor)
-            {
-                // Stop movement but do not destroy
-                Projectile.velocity = Vector2.Zero;
-                return false; // Returning false prevents projectile from being killed
-            }
-
-            // If not following, allow normal collision behavior
-            return true;
-        }
-
-        #endregion
-
-        #region Private Helper Methods
-
-        private Vector2 AdjustVelocityForTileCollision(Vector2 velocity)
-        {
-            // Check horizontal and vertical collisions separately to determine sliding behavior
-            Vector2 horizontalVelocity = new Vector2(velocity.X, 0);
-            Vector2 verticalVelocity = new Vector2(0, velocity.Y);
-
-            // If horizontal movement would collide, zero out X velocity
-            if (Collision.SolidCollision(Projectile.position + horizontalVelocity, Projectile.width, Projectile.height))
-            {
-                velocity.X = 0;
-            }
-
-            // If vertical movement would collide, zero out Y velocity
-            if (Collision.SolidCollision(Projectile.position + verticalVelocity, Projectile.width, Projectile.height))
-            {
-                velocity.Y = 0;
-            }
-
-            return velocity;
         }
 
         #endregion
